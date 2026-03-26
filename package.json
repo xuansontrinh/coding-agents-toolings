@@ -7,6 +7,10 @@
   "bin": {
     "coding-agents-toolings": "./dist/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xuansontrinh/coding-agents-toolings.git"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "pretest": "npm run build",
