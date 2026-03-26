@@ -29,14 +29,14 @@ Creates a structured spec and task breakdown for a new development task.
 
 Produces two files in `agent-specs/active/<task-name>/`:
 
-- **`<task-name>-spec.md`** — Overview, requirements, acceptance criteria, proposed design, decisions, dependencies, key files
+- **`<task-name>-plan.md`** — Overview, requirements, acceptance criteria, design, decisions, dependencies, key files
 - **`<task-name>-tasks.md`** — Phased checklist with effort estimates (S/M/L/XL), per-task acceptance criteria, dependency tracking, and a handoff section
 
 ### `/spec-update`
 
 Updates an existing spec before context compaction or session end. Captures what git doesn't record:
 
-- Appends decisions and newly touched files to the spec
+- Appends decisions and newly touched files to the plan
 - Adds timestamped session notes (append-only log)
 - Marks tasks done/blocked, adds newly discovered tasks
 - Updates the handoff section with current focus, next step, and open questions
@@ -47,7 +47,7 @@ Marks a task as done and archives it:
 
 - Verifies all tasks and acceptance criteria are met
 - Writes a completion summary with outcome and lessons learned
-- Moves the spec from `agent-specs/active/` to `agent-specs/completed/`
+- Moves the task from `agent-specs/active/` to `agent-specs/completed/`
 
 ## Options
 
@@ -72,7 +72,7 @@ your-repo/
   agent-specs/             # Local specs (gitignored)
     active/                # In-progress tasks
       my-feature/
-        my-feature-spec.md
+        my-feature-plan.md
         my-feature-tasks.md
     completed/             # Archived tasks
 ```

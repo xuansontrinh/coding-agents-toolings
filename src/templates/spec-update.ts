@@ -12,12 +12,12 @@ You are updating an existing development spec to preserve context before a sessi
 
 1. **Find the active spec**: Look in \`agent-specs/active/\` for the task directory. If multiple exist, ask which one to update.
 
-2. **Review current state**: Read both the spec and tasks files. Compare against:
+2. **Review current state**: Read both the plan and tasks files. Compare against:
    - Git diff (staged and unstaged changes)
    - Git log (recent commits in this session)
    - Any open files or recent conversations
 
-3. **Update the spec file** (\`<task-name>-spec.md\`):
+3. **Update the plan file** (\`<task-name>-plan.md\`):
 
    Update the "Last updated" timestamp.
 

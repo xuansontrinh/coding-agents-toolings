@@ -19,7 +19,7 @@ You are starting a new development task. Your job is to create a comprehensive s
 
 3. **Create the spec directory**: Create \`agent-specs/active/<task-name>/\` where \`<task-name>\` is a short kebab-case identifier.
 
-4. **Write the spec file** (\`<task-name>-spec.md\`):
+4. **Write the plan file** (\`<task-name>-plan.md\`):
 
 \`\`\`markdown
 # <Task Name>
@@ -99,9 +99,9 @@ Last updated: YYYY-MM-DD HH:MM
 ## Guidelines
 
 - **Be specific, not generic**: Every requirement and task should reference actual code, files, or behaviors in this codebase.
-- **Avoid duplication**: The spec is the single source of truth for *what* and *why*. The tasks file is for *how* and *when*. Don't repeat design details in tasks.
+- **Avoid duplication**: The plan is the single source of truth for *what* and *why*. The tasks file is for *how* and *when*. Don't repeat design details in tasks.
 - **Size tasks for AI agents**: Each task should be completable in a single focused session. If a task needs more than ~4 files changed, break it down.
-- **Include acceptance criteria everywhere**: Both the spec (for requirements) and tasks (for individual work items) need clear verification steps.
+- **Include acceptance criteria everywhere**: Both the plan (for requirements) and tasks (for individual work items) need clear verification steps.
 - **Think about session continuity**: Write as if the next person reading has zero context. The spec + tasks should be fully self-contained.
 - **Update timestamps**: Always update "Last updated" when creating or modifying files. These files are gitignored, so timestamps are the only way to track freshness.
 `;
