@@ -46,6 +46,8 @@ export async function init(opts: InitOptions): Promise<void> {
     console.log();
     if (opts.dryRun) {
         log.info('Dry run complete. No files were modified.');
+    } else if (!skillsChanged) {
+        log.success('Already up to date — no skills changed.');
     } else {
         log.success('Done! Skills installed:');
         log.dim('  .agents/skills/spec-create/SKILL.md');
