@@ -8,13 +8,14 @@ Skills and toolings for AI coding agents. Install spec-driven development skills
 npx coding-agents-toolings init
 ```
 
-This installs three skills and sets up your repo:
+This installs four skills and sets up your repo:
 
 ```
 .agents/skills/
   spec-create/SKILL.md     # Create a spec + task breakdown
   spec-update/SKILL.md     # Update spec before session end
   spec-complete/SKILL.md   # Archive completed spec
+  spec-handoff/SKILL.md    # Generate a handoff summary for teammates
 
 .claude/skills -> ../.agents/skills   # Symlink for Claude Code discovery
 
@@ -49,6 +50,15 @@ Marks a task as done and archives it:
 - Writes a completion summary with outcome and lessons learned
 - Moves the task from `agent-specs/active/` to `agent-specs/completed/`
 
+### `/spec-handoff`
+
+Generates a standalone handoff summary for sharing with teammates in Slack, PRs, or tickets:
+
+- Auto-runs `spec-update` first to ensure docs are current
+- Reads the spec, tasks, and git history to produce a prose summary
+- Outputs to the conversation **and** saves to `agent-specs/active/<task-name>/<task-name>-handoff.md`
+- Supports format variants via `--format` flag: `default`, `pr`, `slack`, `ticket`
+
 ## Options
 
 ```
@@ -74,6 +84,7 @@ your-repo/
       my-feature/
         my-feature-plan.md
         my-feature-tasks.md
+        my-feature-handoff.md
     completed/             # Archived tasks
 ```
 
