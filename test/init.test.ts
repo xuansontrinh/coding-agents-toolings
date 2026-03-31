@@ -45,9 +45,11 @@ describe('coding-agents-toolings init', () => {
         const specCreate = join(tmpDir, '.agents', 'skills', 'spec-create', 'SKILL.md');
         const specUpdate = join(tmpDir, '.agents', 'skills', 'spec-update', 'SKILL.md');
         const specComplete = join(tmpDir, '.agents', 'skills', 'spec-complete', 'SKILL.md');
+        const specHandoff = join(tmpDir, '.agents', 'skills', 'spec-handoff', 'SKILL.md');
         expect(existsSync(specCreate)).toBe(true);
         expect(existsSync(specUpdate)).toBe(true);
         expect(existsSync(specComplete)).toBe(true);
+        expect(existsSync(specHandoff)).toBe(true);
 
         // Check content
         const content = readFileSync(specCreate, 'utf-8');
@@ -61,6 +63,10 @@ describe('coding-agents-toolings init', () => {
         const doneContent = readFileSync(specComplete, 'utf-8');
         expect(doneContent).toContain('name: spec-complete');
         expect(doneContent).toContain('agent-specs/completed/');
+
+        const handoffContent = readFileSync(specHandoff, 'utf-8');
+        expect(handoffContent).toContain('name: spec-handoff');
+        expect(handoffContent).toContain('agent-specs/active/');
 
         // Check symlink
         const symlinkPath = join(tmpDir, '.claude', 'skills');

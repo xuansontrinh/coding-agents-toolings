@@ -3,3 +3,5 @@ dist/
 *.tsbuildinfo
 .idea/
 .claude/
+# Local AI agent specs — added by coding-agents-toolings
+agent-specs/
