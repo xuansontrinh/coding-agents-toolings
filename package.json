@@ -37,6 +37,6 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
-    "coding-agents-toolings": "^0.1.12"
+    "coding-agents-toolings": "^0.1.13"
   }
 }
