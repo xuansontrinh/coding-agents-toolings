@@ -1,7 +1,6 @@
 export const SPEC_HANDOFF_SKILL = `---
 name: spec-handoff
 description: Generate a standalone handoff summary from an active spec for sharing with teammates
-agent: *
 ---
 
 # spec-handoff — Generate Handoff Summary

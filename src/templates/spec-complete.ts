@@ -1,7 +1,6 @@
 export const SPEC_COMPLETE_SKILL = `---
 name: spec-complete
 description: Mark a spec as completed and archive it
-agent: *
 ---
 
 # spec-complete — Complete and Archive Spec

@@ -1,7 +1,6 @@
 export const SPEC_CREATE_SKILL = `---
 name: spec-create
 description: Create a spec and task breakdown for a new development task
-agent: *
 ---
 
 # spec-create — Create Development Spec

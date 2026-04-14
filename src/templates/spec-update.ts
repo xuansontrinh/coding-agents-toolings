@@ -1,7 +1,6 @@
 export const SPEC_UPDATE_SKILL = `---
 name: spec-update
 description: Update an existing spec and tasks before context compaction or session end
-agent: *
 ---
 
 # spec-update — Update Development Spec
