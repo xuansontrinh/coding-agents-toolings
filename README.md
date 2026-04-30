@@ -1,6 +1,6 @@
 # coding-agents-toolings
 
-Skills and toolings for AI coding agents. Install spec-driven development skills into any git repo, compatible with Claude Code and other AI agents.
+Skills and toolings for AI coding agents. Install spec-driven development skills into any git repo for use across different agent workflows, including compatibility with Claude Code.
 
 ## Quick Start
 
@@ -17,7 +17,7 @@ This installs four skills and sets up your repo:
   spec-complete/SKILL.md   # Archive completed spec
   spec-handoff/SKILL.md    # Generate a handoff summary for teammates
 
-.claude/skills -> ../.agents/skills   # Symlink for Claude Code discovery
+.claude/skills -> ../.agents/skills   # Compatibility symlink for Claude Code and similar agent setups
 
 .gitignore                 # agent-specs/ added (local working state)
 ```
@@ -75,7 +75,7 @@ npx coding-agents-toolings init [options]
 
 ## How It Works
 
-Skills are installed to `.agents/skills/` with a symlink from `.claude/skills/` for Claude Code discovery. Specs are written to `agent-specs/` which is automatically added to `.gitignore` since they are local working state, not committed artifacts.
+Skills are installed to `.agents/skills/` with a compatibility symlink from `.claude/skills/` for Claude Code and related agent environments. Specs are written to `agent-specs/` which is automatically added to `.gitignore` since they are local working state, not committed artifacts.
 
 ### Directory Structure
 

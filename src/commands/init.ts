@@ -58,6 +58,6 @@ export async function init(opts: InitOptions): Promise<void> {
             log.dim('  .claude/skills → ../.agents/skills');
         }
         console.log();
-        log.info('Use /spec-create, /spec-update, /spec-complete, and /spec-handoff in Claude Code.');
+        log.info('Use /spec-create, /spec-update, /spec-complete, and /spec-handoff in your agent workflow.');
     }
 }
