@@ -43,7 +43,7 @@ One paragraph max summarizing what this task accomplishes and why.
 - ...
 
 ## Current State
-3-7 bullets describing what exists today. Capture relevant code paths, data flows, or behaviors.
+Bullet points describing what exists today. Capture relevant code paths, data flows, or behaviors. Keep it concise, focused, and not lossy.
 
 ## Proposed Design
 How the implementation will work. Prefer short bullets over long prose. Include:
