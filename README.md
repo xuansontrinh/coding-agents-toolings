@@ -28,19 +28,21 @@ This installs four skills and sets up your repo:
 
 Creates a structured spec and task breakdown for a new development task.
 
-Produces two files in `agent-specs/active/<task-name>/`:
+Produces a compact working set in `agent-specs/active/<task-name>/`:
 
-- **`<task-name>-plan.md`** — Overview, requirements, acceptance criteria, design, decisions, dependencies, key files
+- **`<task-name>-plan.md`** — Concise landing page with requirements, acceptance criteria, design, decisions, risks, and a cumulative multi-codebase map
 - **`<task-name>-tasks.md`** — Phased checklist with effort estimates (S/M/L/XL), per-task acceptance criteria, dependency tracking, and a handoff section
+- **`history/`** — Archived session notes kept outside the main plan so the active spec stays readable
 
 ### `/spec-update`
 
 Updates an existing spec before context compaction or session end. Captures what git doesn't record:
 
-- Appends decisions and newly touched files to the plan
-- Adds timestamped session notes (append-only log)
+- Rewrites the active plan/tasks in place so they stay concise and current
+- Maintains the plan's Codebase Map with in-scope repos, paths, links, and re-entry commands
+- Writes a new timestamped note under `history/` for audit detail and failed attempts
 - Marks tasks done/blocked, adds newly discovered tasks
-- Updates the handoff section with current focus, next step, and open questions
+- Updates the handoff section with current focus, next step, primary repos/paths, and open questions
 
 ### `/spec-complete`
 
@@ -49,6 +51,7 @@ Marks a task as done and archives it:
 - Verifies all tasks and acceptance criteria are met
 - Writes a completion summary with outcome and lessons learned
 - Moves the task from `agent-specs/active/` to `agent-specs/completed/`
+- Preserves `history/` and handoff files for later audits
 
 ### `/spec-handoff`
 
@@ -56,6 +59,7 @@ Generates a standalone handoff summary for sharing with teammates in Slack, PRs,
 
 - Auto-runs `spec-update` first to ensure docs are current
 - Reads the spec, tasks, and git history to produce a prose summary
+- Uses the Codebase Map as the durable source of repos/paths/links and only reads `history/` when extra context is needed
 - Outputs to the conversation **and** saves to `agent-specs/active/<task-name>/<task-name>-handoff.md`
 - Supports format variants via `--format` flag: `default`, `pr`, `slack`, `ticket`
 
@@ -85,6 +89,8 @@ your-repo/
         my-feature-plan.md
         my-feature-tasks.md
         my-feature-handoff.md
+        history/
+          2026-04-30-0945.md
     completed/             # Archived tasks
 ```
 

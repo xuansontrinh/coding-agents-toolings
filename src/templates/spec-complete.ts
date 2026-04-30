@@ -39,7 +39,9 @@ You are marking a development task as completed and archiving it for future refe
 
 4. **Update the tasks file**: Update "Last updated" timestamp. Ensure all tasks reflect their final state (done, skipped with reason, or deferred).
 
-5. **Archive**: Move the task directory from \`agent-specs/active/<task-name>/\` to \`agent-specs/completed/<task-name>/\`. Create \`agent-specs/completed/\` if it doesn't exist.
+5. **Archive**: Move the entire task directory from \`agent-specs/active/<task-name>/\` to \`agent-specs/completed/<task-name>/\`. Create \`agent-specs/completed/\` if it doesn't exist.
+   - Preserve the \`history/\` directory and any handoff files exactly as they are for audit purposes
+   - Do not flatten or rewrite archived history just to "clean it up"
 
 6. **Report**: Tell the user what was archived and where to find it.
 
@@ -47,6 +49,8 @@ You are marking a development task as completed and archiving it for future refe
 
 - **Don't skip verification**: Even if the user says "it's done", read the tasks and confirm. Catching a missed task now is better than discovering it later.
 - **Be honest in the summary**: If the implementation diverged from the plan, document why. This is valuable context for anyone revisiting the work.
+- **Keep the plan concise even at the end**: The completion summary should explain the outcome, not repeat the full session history. Historical detail already lives in \`history/\`.
+- **Preserve auditability**: The archived task should still contain the durable multi-codebase map, final tasks state, handoff snapshot, and history notes.
 - **Lessons learned are optional but encouraged**: If nothing surprising happened, a single "Straightforward implementation, no surprises" is fine.
 - **Partial completion is OK**: Not every spec needs 100% completion. What matters is that the final state is clearly documented.
 `;

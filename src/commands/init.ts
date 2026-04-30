@@ -53,10 +53,11 @@ export async function init(opts: InitOptions): Promise<void> {
         log.dim('  .agents/skills/spec-create/SKILL.md');
         log.dim('  .agents/skills/spec-update/SKILL.md');
         log.dim('  .agents/skills/spec-complete/SKILL.md');
+        log.dim('  .agents/skills/spec-handoff/SKILL.md');
         if (!opts.noSymlink) {
             log.dim('  .claude/skills → ../.agents/skills');
         }
         console.log();
-        log.info('Use /spec-create, /spec-update, and /spec-complete in Claude Code.');
+        log.info('Use /spec-create, /spec-update, /spec-complete, and /spec-handoff in Claude Code.');
     }
 }

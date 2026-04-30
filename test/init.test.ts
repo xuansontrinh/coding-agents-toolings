@@ -55,18 +55,28 @@ describe('coding-agents-toolings init', () => {
         const content = readFileSync(specCreate, 'utf-8');
         expect(content).toContain('name: spec-create');
         expect(content).toContain('agent-specs/active/');
+        expect(content).toContain('## Codebase Map');
+        expect(content).toContain('### Repositories');
+        expect(content).toContain('Repo / Codebase');
+        expect(content).toContain('history/');
 
         const updateContent = readFileSync(specUpdate, 'utf-8');
         expect(updateContent).toContain('name: spec-update');
         expect(updateContent).toContain('agent-specs/active/');
+        expect(updateContent).toContain('Codebase Map');
+        expect(updateContent).toContain('multiple microservices or repos');
+        expect(updateContent).toContain('history/');
 
         const doneContent = readFileSync(specComplete, 'utf-8');
         expect(doneContent).toContain('name: spec-complete');
         expect(doneContent).toContain('agent-specs/completed/');
+        expect(doneContent).toContain('history/');
 
         const handoffContent = readFileSync(specHandoff, 'utf-8');
         expect(handoffContent).toContain('name: spec-handoff');
         expect(handoffContent).toContain('agent-specs/active/');
+        expect(handoffContent).toContain('Codebase Map');
+        expect(handoffContent).toContain('repo-qualified');
 
         // Check symlink
         const symlinkPath = join(tmpDir, '.claude', 'skills');
