@@ -21,6 +21,7 @@ async function main(): Promise<void> {
       force: hasFlag('force'),
       dryRun: hasFlag('dry-run'),
       noSymlink: hasFlag('no-symlink'),
+      noHook: hasFlag('no-hook'),
     });
     return;
   }
@@ -32,18 +33,19 @@ async function main(): Promise<void> {
 
 function printHelp(): void {
   console.log(`
-  ${log.bold('coding-agents-toolings')} — Skills and toolings for AI coding agents
+  ${log.bold('coding-agents-toolings')} — Skills, hooks, and toolings for AI coding agents
 
   Usage:
     npx coding-agents-toolings init [options]
 
   Commands:
-    init          Install agent skills into the current git repo
+    init          Install agent skills and repo-local agent hooks into the current git repo
 
   Options:
     --force       Overwrite without prompting
     --dry-run     Show what would happen, no mutations
     --no-symlink  Only write to .agents/skills/, skip .claude/skills link
+    --no-hook     Skip repo-local Codex and Claude hook setup
     --help, -h    Show this help
 `);
 }

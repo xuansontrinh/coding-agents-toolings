@@ -5,6 +5,7 @@ import { SPEC_CREATE_SKILL } from '../templates/spec-create.js';
 import { SPEC_UPDATE_SKILL } from '../templates/spec-update.js';
 import { SPEC_COMPLETE_SKILL } from '../templates/spec-complete.js';
 import { SPEC_HANDOFF_SKILL } from '../templates/spec-handoff.js';
+import { IDE_MCP_SKILL } from '../templates/ide-mcp.js';
 
 export interface WriteSkillsOptions {
   root: string;
@@ -22,6 +23,7 @@ const SKILLS: SkillDef[] = [
   { name: 'spec-update', content: SPEC_UPDATE_SKILL },
   { name: 'spec-complete', content: SPEC_COMPLETE_SKILL },
   { name: 'spec-handoff', content: SPEC_HANDOFF_SKILL },
+  { name: 'ide-mcp', content: IDE_MCP_SKILL },
 ];
 
 export function writeSkills(opts: WriteSkillsOptions): boolean {

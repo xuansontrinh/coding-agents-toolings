@@ -1,6 +1,6 @@
 # coding-agents-toolings
 
-Skills and toolings for AI coding agents. Install spec-driven development skills into any git repo for use across different agent workflows, including compatibility with Claude Code.
+Skills and toolings for AI coding agents. Install spec-driven development skills plus repo-local Codex and Claude hook wiring into any git repo.
 
 ## Quick Start
 
@@ -8,7 +8,7 @@ Skills and toolings for AI coding agents. Install spec-driven development skills
 npx coding-agents-toolings init
 ```
 
-This installs four skills and sets up your repo:
+This installs five skills and sets up your repo:
 
 ```
 .agents/skills/
@@ -16,8 +16,15 @@ This installs four skills and sets up your repo:
   spec-update/SKILL.md     # Update spec before session end
   spec-complete/SKILL.md   # Archive completed spec
   spec-handoff/SKILL.md    # Generate a handoff summary for teammates
+  ide-mcp/SKILL.md         # Prefer JetBrains IDE MCP tools for code work when available
 
 .claude/skills -> ../.agents/skills   # Compatibility symlink for Claude Code and similar agent setups
+
+.codex/config.toml                    # Repo-local Codex hook config + codex_hooks feature flag
+.codex/hooks/ide-mcp-context.mjs      # UserPromptSubmit hook script for Codex
+
+.claude/settings.json                 # Repo-local Claude hook config
+.claude/hooks/ide-mcp-context.mjs     # UserPromptSubmit hook script for Claude
 
 .gitignore                 # agent-specs/ added (local working state)
 ```
@@ -63,6 +70,16 @@ Generates a standalone handoff summary for sharing with teammates in Slack, PRs,
 - Outputs to the conversation **and** saves to `agent-specs/active/<task-name>/<task-name>-handoff.md`
 - Supports format variants via `--format` flag: `default`, `pr`, `slack`, `ticket`
 
+### `ide-mcp`
+
+Helps coding sessions prefer connected JetBrains IDE MCP servers such as WebStorm or IntelliJ IDEA when the prompt is clearly about source code work.
+
+- Uses the shared repo-local skill as the portable behavior contract
+- Adds repo-local `UserPromptSubmit` hooks for both Codex and Claude by default
+- Nudges the agent toward IDE-aware symbol lookup, navigation, usages, inspections, and refactors
+- Falls back to normal repo exploration with `rg`, file reads, and build/test commands when no IDE MCP server is connected
+- Does **not** provision MCP connections itself; it relies on the user's existing Codex, Claude, or JetBrains setup
+
 ## Options
 
 ```
@@ -71,11 +88,16 @@ npx coding-agents-toolings init [options]
 --force       Overwrite existing files without prompting
 --dry-run     Show what would happen without writing anything
 --no-symlink  Only write to .agents/skills/, skip .claude/skills symlink
+--no-hook     Skip repo-local Codex and Claude hook setup
 ```
 
 ## How It Works
 
-Skills are installed to `.agents/skills/` with a compatibility symlink from `.claude/skills/` for Claude Code and related agent environments. Specs are written to `agent-specs/` which is automatically added to `.gitignore` since they are local working state, not committed artifacts.
+Skills are installed to `.agents/skills/` with a compatibility symlink from `.claude/skills/` for Claude Code and related agent environments. The `ide-mcp` skill is the shared, portable behavior layer, and repo-local `UserPromptSubmit` hooks are installed for both Codex and Claude so code-oriented prompts automatically get a short nudge to prefer connected `idea` or `webstorm` MCP servers when available.
+
+This package does not write user-global client config such as `~/.codex/config.toml` or `~/.claude.json`, and it does not try to generate JetBrains MCP connection details. It only installs repo-local skills and repo-local hook/config files.
+
+Specs are written to `agent-specs/` which is automatically added to `.gitignore` since they are local working state, not committed artifacts.
 
 ### Directory Structure
 
@@ -83,6 +105,10 @@ Skills are installed to `.agents/skills/` with a compatibility symlink from `.cl
 your-repo/
   .agents/skills/          # Skill definitions (committed)
   .claude/skills           # Symlink -> ../.agents/skills (committed)
+  .claude/settings.json    # Repo-local Claude hook config (committed)
+  .claude/hooks/           # Hook scripts for Claude (committed)
+  .codex/config.toml       # Repo-local Codex config + hooks (committed)
+  .codex/hooks/            # Hook scripts for Codex (committed)
   agent-specs/             # Local specs (gitignored)
     active/                # In-progress tasks
       my-feature/
