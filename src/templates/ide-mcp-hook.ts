@@ -1,5 +1,9 @@
 export const IDE_MCP_HOOK_SCRIPT = `#!/usr/bin/env node
 
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
+import { join } from 'node:path';
+
 async function readStdin() {
   return await new Promise((resolve) => {
     let data = '';
@@ -16,6 +20,7 @@ function isObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+const JETBRAINS_ALIASES = ['idea', 'webstorm', 'pycharm', 'goland', 'rider', 'phpstorm', 'rubymine', 'rustrover', 'clion', 'datagrip', 'dataspell'];
 const STRONG_CODE_HINT_RE = /\\b(refactor|rename|debug|stack trace|find usages|find references|go to definition|definition|implementation|symbol|class|function|method|module|package|codebase|repository|repo|source code|build|test|compile|lint|typecheck|webstorm|intellij|idea|pycharm|goland|rider|phpstorm|rubymine|rustrover|clion|datagrip|dataspell)\\b/i;
 const CODE_PATH_RE = /(^|[\\s\`"'(])(?:src\\/|app\\/|lib\\/|packages\\/|modules\\/|tests?\\/|spec\\/|[\\w./-]+\\.(?:ts|tsx|js|jsx|mjs|cjs|java|kt|kts|py|rb|go|rs|c|cc|cpp|h|hpp|cs|php|swift|scala|sql|ipynb))(?:$|[\\s\`"')])/i;
 
@@ -168,7 +173,11 @@ function shouldSuggest(prompt) {
     return false;
   }
 
-  if (STRONG_CODE_HINT_RE.test(prompt) || CODE_PATH_RE.test(prompt)) {
+  if (
+    STRONG_CODE_HINT_RE.test(prompt) ||
+    CODE_PATH_RE.test(prompt) ||
+    ROUTES.some((route) => route.patterns.some((pattern) => pattern.test(prompt)))
+  ) {
     return true;
   }
 
@@ -185,13 +194,16 @@ function shouldSuggest(prompt) {
   return false;
 }
 
-function inferRoutingHint(prompt) {
+function inferRoute(prompt) {
   const matches = ROUTES.filter((route) => {
     return route.patterns.some((pattern) => pattern.test(prompt));
   });
 
   if (matches.length === 1) {
-    return matches[0].guidance;
+    return {
+      aliases: [...matches[0].aliases],
+      guidance: matches[0].guidance,
+    };
   }
 
   if (matches.length > 1) {
@@ -199,23 +211,212 @@ function inferRoutingHint(prompt) {
       .map((alias) => '\`' + alias + '\`')
       .join(', ');
 
-    return 'Prompt spans multiple stacks or JetBrains IDE specializations. Prefer the server whose alias best matches the referenced files or module. Likely candidates: ' + aliases + '. Use file extensions, build files, and project ownership to choose, then switch once if the first choice is clearly wrong.';
+    return {
+      aliases: Array.from(new Set(matches.flatMap((route) => route.aliases))),
+      guidance: 'Prompt spans multiple stacks or JetBrains IDE specializations. Prefer the server whose alias best matches the referenced files or module. Likely candidates: ' + aliases + '. Use file extensions, build files, and project ownership to choose, then switch once if the first choice is clearly wrong.',
+    };
   }
 
-  return 'Choose among JetBrains IDE aliases such as \`idea\`, \`webstorm\`, \`pycharm\`, \`goland\`, \`rider\`, \`phpstorm\`, \`rubymine\`, \`rustrover\`, \`clion\`, \`datagrip\`, or \`dataspell\` by language, framework, file extensions, build files, and project ownership rather than alias order.';
+  return {
+    aliases: [...JETBRAINS_ALIASES],
+    guidance: 'Choose among JetBrains IDE aliases such as \`idea\`, \`webstorm\`, \`pycharm\`, \`goland\`, \`rider\`, \`phpstorm\`, \`rubymine\`, \`rustrover\`, \`clion\`, \`datagrip\`, or \`dataspell\` by language, framework, file extensions, build files, and project ownership rather than alias order.',
+  };
 }
 
 function buildAdditionalContext(prompt) {
+  const route = inferRoute(prompt);
   return [
     'Code-oriented request detected.',
     'Load and follow the repo-local \`ide-mcp\` skill before defaulting to shell-only exploration.',
-    inferRoutingHint(prompt),
+    route.guidance,
     'If JetBrains IDE MCP servers such as \`idea\`, \`webstorm\`, \`pycharm\`, \`goland\`, \`rider\`, \`phpstorm\`, \`rubymine\`, \`rustrover\`, \`clion\`, \`datagrip\`, or \`dataspell\` are available, prefer the best-matching one for symbol lookup, usages, project-aware navigation, inspections, and refactors.',
     'Do not assume a specific transport or endpoint shape; detect the available MCP aliases and capabilities at runtime.',
     'If the exact specialized IDE alias is not available, use the closest JetBrains IDE that appears to own the target project or module.',
+    'After the first successful JetBrains MCP lookup, prefer a meaningful IDE-native follow-up such as usages, implementations, or related framework navigation before broad text search.',
     'If the first server choice cannot resolve the symbol or clearly does not match the stack, switch once before falling back.',
     'If no suitable IDE MCP server is connected, fall back to repo tools such as \`rg\`, targeted file reads, and local build/test commands without blocking the task.',
   ].join(' ');
+}
+
+function getStateFile(payload) {
+  const keyParts = [
+    typeof payload.cwd === 'string' ? payload.cwd : '',
+    typeof payload.session_id === 'string' ? payload.session_id : '',
+    typeof payload.turn_id === 'string' ? payload.turn_id : '',
+  ].filter(Boolean);
+
+  if (keyParts.length === 0) {
+    return null;
+  }
+
+  const safeKey = keyParts.join('__').replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-180);
+  if (!safeKey) {
+    return null;
+  }
+
+  return join(os.tmpdir(), 'coding-agents-toolings-ide-mcp', safeKey + '.json');
+}
+
+function loadState(payload) {
+  const stateFile = getStateFile(payload);
+  if (!stateFile) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(readFileSync(stateFile, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function saveState(payload, state) {
+  const stateFile = getStateFile(payload);
+  if (!stateFile) {
+    return;
+  }
+
+  mkdirSync(join(os.tmpdir(), 'coding-agents-toolings-ide-mcp'), { recursive: true });
+  writeFileSync(stateFile, JSON.stringify(state), 'utf8');
+}
+
+function getCommand(payload) {
+  if (!isObject(payload.tool_input)) {
+    return '';
+  }
+
+  return typeof payload.tool_input.command === 'string' ? payload.tool_input.command.trim() : '';
+}
+
+function isJetBrainsMcpToolName(toolName) {
+  if (typeof toolName !== 'string' || !toolName.startsWith('mcp__')) {
+    return false;
+  }
+
+  return JETBRAINS_ALIASES.some((alias) => toolName.includes('__' + alias + '__'));
+}
+
+function isBroadSearchCommand(command) {
+  if (!command) {
+    return false;
+  }
+
+  const normalized = command.trim();
+  if (/^(cat|sed|nl|head|tail|awk|less)\\b/.test(normalized)) {
+    return false;
+  }
+
+  if (!/^(rg|grep|git grep|fd|find)\\b/.test(normalized)) {
+    return false;
+  }
+
+  if (/^rg\\s+--files\\b/.test(normalized)) {
+    return false;
+  }
+
+  if (/(^|[\\s"'\`])(src\\/|app\\/|lib\\/|packages\\/|modules\\/|tests?\\/|spec\\/|[\\w./-]+\\.(?:kt|kts|java|scala|ts|tsx|js|jsx|py|rb|go|rs|c|cc|cpp|h|hpp|cs|php|sql|xml|yaml|yml|json))($|[\\s"'\`])/.test(normalized)) {
+    return false;
+  }
+
+  return true;
+}
+
+function preferredAliasText(state) {
+  const aliases = Array.isArray(state?.preferredAliases) && state.preferredAliases.length > 0
+    ? state.preferredAliases
+    : JETBRAINS_ALIASES;
+
+  return aliases.map((alias) => '\`' + alias + '\`').join(', ');
+}
+
+function buildBashBlockReason(state) {
+  if ((state?.jetbrainsMcpCalls ?? 0) === 0) {
+    return 'This turn is using \`ide-mcp\`. Before broad shell search, start with the best-matching JetBrains MCP server for symbol lookup or project-aware navigation. Preferred aliases for this turn: ' + preferredAliasText(state) + '.';
+  }
+
+  return 'JetBrains MCP has only been used once on this turn. Before broad shell search, take a meaningful IDE-native follow-up such as usages, implementations, related symbol lookup, or framework wiring in ' + preferredAliasText(state) + '.';
+}
+
+function handleUserPromptSubmit(payload) {
+  const prompt = typeof payload.prompt === 'string' ? payload.prompt : '';
+  if (!shouldSuggest(prompt)) {
+    return null;
+  }
+
+  const route = inferRoute(prompt);
+  saveState(payload, {
+    sessionId: payload.session_id ?? null,
+    turnId: payload.turn_id ?? null,
+    codeOriented: true,
+    preferredAliases: route.aliases,
+    jetbrainsMcpCalls: 0,
+    bashBlocks: 0,
+  });
+
+  return {
+    hookSpecificOutput: {
+      hookEventName: 'UserPromptSubmit',
+      additionalContext: buildAdditionalContext(prompt),
+    },
+  };
+}
+
+function handlePreToolUse(payload) {
+  if (payload.tool_name !== 'Bash') {
+    return null;
+  }
+
+  const state = loadState(payload);
+  if (!state?.codeOriented) {
+    return null;
+  }
+
+  const command = getCommand(payload);
+  if (!isBroadSearchCommand(command)) {
+    return null;
+  }
+
+  if ((state.jetbrainsMcpCalls ?? 0) >= 2 || (state.bashBlocks ?? 0) >= 2) {
+    return null;
+  }
+
+  state.bashBlocks = (state.bashBlocks ?? 0) + 1;
+  saveState(payload, state);
+
+  const reason = buildBashBlockReason(state);
+  return {
+    systemMessage: 'ide-mcp guardrail: prefer JetBrains IDE navigation before broad shell search.',
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'deny',
+      permissionDecisionReason: reason,
+    },
+  };
+}
+
+function handlePostToolUse(payload) {
+  const state = loadState(payload);
+  if (!state?.codeOriented) {
+    return null;
+  }
+
+  if (!isJetBrainsMcpToolName(payload.tool_name)) {
+    return null;
+  }
+
+  state.jetbrainsMcpCalls = (state.jetbrainsMcpCalls ?? 0) + 1;
+  saveState(payload, state);
+
+  if (state.jetbrainsMcpCalls !== 1) {
+    return null;
+  }
+
+  return {
+    hookSpecificOutput: {
+      hookEventName: 'PostToolUse',
+      additionalContext: 'JetBrains MCP returned project-aware context for this turn. Before broad text search, prefer a meaningful IDE-native follow-up such as usages, implementations, related symbols, or framework wiring.',
+    },
+  };
 }
 
 async function main() {
@@ -235,21 +436,26 @@ async function main() {
     return;
   }
 
-  if (payload.hook_event_name !== 'UserPromptSubmit') {
+  let result = null;
+  switch (payload.hook_event_name) {
+    case 'UserPromptSubmit':
+      result = handleUserPromptSubmit(payload);
+      break;
+    case 'PreToolUse':
+      result = handlePreToolUse(payload);
+      break;
+    case 'PostToolUse':
+      result = handlePostToolUse(payload);
+      break;
+    default:
+      result = null;
+  }
+
+  if (!result) {
     return;
   }
 
-  const prompt = typeof payload.prompt === 'string' ? payload.prompt : '';
-  if (!shouldSuggest(prompt)) {
-    return;
-  }
-
-  process.stdout.write(JSON.stringify({
-    hookSpecificOutput: {
-      hookEventName: 'UserPromptSubmit',
-      additionalContext: buildAdditionalContext(prompt),
-    },
-  }));
+  process.stdout.write(JSON.stringify(result));
 }
 
 main().catch(() => {

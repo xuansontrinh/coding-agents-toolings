@@ -117,6 +117,8 @@ describe('coding-agents-toolings init', () => {
         expect(codexConfigContent).toContain('codex_hooks = true');
         expect(codexConfigContent).toContain('BEGIN coding-agents-toolings ide-mcp');
         expect(codexConfigContent).toContain('[[hooks.UserPromptSubmit]]');
+        expect(codexConfigContent).toContain('[[hooks.PreToolUse]]');
+        expect(codexConfigContent).toContain('[[hooks.PostToolUse]]');
         expect(codexConfigContent).toContain('.codex/hooks/ide-mcp-context.mjs');
 
         // Check Claude repo-local settings and hook script
@@ -136,6 +138,9 @@ describe('coding-agents-toolings init', () => {
 
         const codexHookScript = join(tmpDir, '.codex', 'hooks', 'ide-mcp-context.mjs');
         const codePrompt = JSON.stringify({
+            cwd: tmpDir,
+            session_id: 'session-kotlin',
+            turn_id: 'turn-kotlin',
             hook_event_name: 'UserPromptSubmit',
             prompt: 'Find the Kotlin service class in build.gradle.kts and rename the OrderService symbol',
         });
@@ -156,6 +161,9 @@ describe('coding-agents-toolings init', () => {
         const codexHookScript = join(tmpDir, '.codex', 'hooks', 'ide-mcp-context.mjs');
         const pythonPromptResult = spawnSync('node', [codexHookScript], {
             input: JSON.stringify({
+                cwd: tmpDir,
+                session_id: 'session-python',
+                turn_id: 'turn-python',
                 hook_event_name: 'UserPromptSubmit',
                 prompt: 'Trace the FastAPI endpoint in app/api/users.py and update the pytest coverage',
             }),
@@ -173,6 +181,9 @@ describe('coding-agents-toolings init', () => {
         const codexHookScript = join(tmpDir, '.codex', 'hooks', 'ide-mcp-context.mjs');
         const webPromptResult = spawnSync('node', [codexHookScript], {
             input: JSON.stringify({
+                cwd: tmpDir,
+                session_id: 'session-web',
+                turn_id: 'turn-web',
                 hook_event_name: 'UserPromptSubmit',
                 prompt: 'Refactor the React component in src/components/App.tsx and update the Next.js route',
             }),
@@ -185,6 +196,9 @@ describe('coding-agents-toolings init', () => {
 
         const nonCodeResult = spawnSync('node', [codexHookScript], {
             input: JSON.stringify({
+                cwd: tmpDir,
+                session_id: 'session-note',
+                turn_id: 'turn-note',
                 hook_event_name: 'UserPromptSubmit',
                 prompt: 'Write a short release note for this sprint',
             }),
@@ -192,6 +206,99 @@ describe('coding-agents-toolings init', () => {
         });
         expect(nonCodeResult.status).toBe(0);
         expect(nonCodeResult.stdout.trim()).toBe('');
+    });
+
+    it('Codex guardrail blocks broad shell search until enough JetBrains MCP steps have happened', () => {
+        runCli(tmpDir, 'init --force');
+
+        const codexHookScript = join(tmpDir, '.codex', 'hooks', 'ide-mcp-context.mjs');
+        const context = {
+            cwd: tmpDir,
+            session_id: 'session-guardrail',
+            turn_id: 'turn-guardrail',
+        };
+
+        const submitResult = spawnSync('node', [codexHookScript], {
+            input: JSON.stringify({
+                ...context,
+                hook_event_name: 'UserPromptSubmit',
+                prompt: 'Trace how HubEmbeddedUiPassThroughAuthenticationParser is wired through Spring security in the Kotlin backend',
+            }),
+            encoding: 'utf-8',
+        });
+        expect(submitResult.status).toBe(0);
+        expect(submitResult.stdout.trim()).not.toBe('');
+
+        const firstMcpResult = spawnSync('node', [codexHookScript], {
+            input: JSON.stringify({
+                ...context,
+                hook_event_name: 'PostToolUse',
+                tool_name: 'mcp__idea__search_symbol',
+                tool_response: {content: [{type: 'text', text: 'Found symbol'}]},
+            }),
+            encoding: 'utf-8',
+        });
+        expect(firstMcpResult.status).toBe(0);
+        expect(firstMcpResult.stdout.trim()).not.toBe('');
+        const firstMcpOutput = JSON.parse(firstMcpResult.stdout);
+        expect(firstMcpOutput.hookSpecificOutput.additionalContext).toContain('meaningful IDE-native follow-up');
+
+        const blockedSearchResult = spawnSync('node', [codexHookScript], {
+            input: JSON.stringify({
+                ...context,
+                hook_event_name: 'PreToolUse',
+                tool_name: 'Bash',
+                tool_input: {
+                    command: 'rg "HubEmbeddedUiPassThroughAuthenticationParser"',
+                },
+            }),
+            encoding: 'utf-8',
+        });
+        expect(blockedSearchResult.status).toBe(0);
+        expect(blockedSearchResult.stdout.trim()).not.toBe('');
+        const blockedSearchOutput = JSON.parse(blockedSearchResult.stdout);
+        expect(blockedSearchOutput.hookSpecificOutput.permissionDecision).toBe('deny');
+        expect(blockedSearchOutput.hookSpecificOutput.permissionDecisionReason).toContain('JetBrains MCP has only been used once');
+
+        const secondMcpResult = spawnSync('node', [codexHookScript], {
+            input: JSON.stringify({
+                ...context,
+                hook_event_name: 'PostToolUse',
+                tool_name: 'mcp__idea__find_usages',
+                tool_response: {content: [{type: 'text', text: 'Found usages'}]},
+            }),
+            encoding: 'utf-8',
+        });
+        expect(secondMcpResult.status).toBe(0);
+        expect(secondMcpResult.stdout.trim()).toBe('');
+
+        const allowedSearchResult = spawnSync('node', [codexHookScript], {
+            input: JSON.stringify({
+                ...context,
+                hook_event_name: 'PreToolUse',
+                tool_name: 'Bash',
+                tool_input: {
+                    command: 'rg "HubEmbeddedUiPassThroughAuthenticationParser"',
+                },
+            }),
+            encoding: 'utf-8',
+        });
+        expect(allowedSearchResult.status).toBe(0);
+        expect(allowedSearchResult.stdout.trim()).toBe('');
+
+        const fileReadResult = spawnSync('node', [codexHookScript], {
+            input: JSON.stringify({
+                ...context,
+                hook_event_name: 'PreToolUse',
+                tool_name: 'Bash',
+                tool_input: {
+                    command: 'sed -n \'1,120p\' src/main/kotlin/example/Foo.kt',
+                },
+            }),
+            encoding: 'utf-8',
+        });
+        expect(fileReadResult.status).toBe(0);
+        expect(fileReadResult.stdout.trim()).toBe('');
     });
 
     it('is idempotent — re-running makes no duplicate hook registrations', () => {

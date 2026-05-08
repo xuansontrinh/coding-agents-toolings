@@ -35,6 +35,7 @@ Prefer IDE-aware MCP tools for project navigation and refactors without making t
    - project-wide search with IDE context
    - rename, move, and refactor flows
    - IDE inspections and code-aware analysis
+   - in Codex sessions, after the first successful MCP lookup, prefer a meaningful IDE-native follow-up such as usages, implementations, or related framework navigation before broad text search
 4. Use normal repo tools alongside MCP when they are the better fit:
    - \`rg\` and targeted file reads for quick text search
    - local build, test, and lint commands for verification
@@ -86,6 +87,7 @@ Prefer IDE-aware MCP tools for project navigation and refactors without making t
 - **Stay flexible**:
   - if the repo is full-stack, choose by the files or module named in the prompt instead of the dominant stack of the repo
   - if the prompt is generic, inspect local files first and then pick the server
+  - once MCP has identified the right symbol or module, prefer another IDE-native step such as usages, implementations, or related framework navigation before broad cross-repo text search
   - if neither server is clearly a fit, use shell exploration instead of forcing the wrong IDE
 
 ## Good Fits

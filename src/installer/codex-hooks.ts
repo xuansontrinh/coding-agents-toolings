@@ -21,6 +21,18 @@ const MANAGED_HOOK_BLOCK = [
   'type = "command"',
   `command = 'node "$(git rev-parse --show-toplevel)/${HOOK_SCRIPT_RELATIVE_PATH}"'`,
   'statusMessage = "Loading IDE MCP context"',
+  '[[hooks.PreToolUse]]',
+  'matcher = "^Bash$"',
+  '[[hooks.PreToolUse.hooks]]',
+  'type = "command"',
+  `command = 'node "$(git rev-parse --show-toplevel)/${HOOK_SCRIPT_RELATIVE_PATH}"'`,
+  'statusMessage = "Checking IDE MCP guardrail"',
+  '[[hooks.PostToolUse]]',
+  'matcher = "^mcp__.*$"',
+  '[[hooks.PostToolUse.hooks]]',
+  'type = "command"',
+  `command = 'node "$(git rev-parse --show-toplevel)/${HOOK_SCRIPT_RELATIVE_PATH}"'`,
+  'statusMessage = "Reinforcing IDE MCP navigation"',
   MANAGED_BLOCK_END,
 ].join('\n');
 
