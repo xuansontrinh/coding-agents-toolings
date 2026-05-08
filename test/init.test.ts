@@ -88,6 +88,11 @@ describe('coding-agents-toolings init', () => {
         expect(ideMcpContent).toContain('name: ide-mcp');
         expect(ideMcpContent).toContain('WebStorm');
         expect(ideMcpContent).toContain('IntelliJ IDEA');
+        expect(ideMcpContent).toContain('`pycharm`');
+        expect(ideMcpContent).toContain('`goland`');
+        expect(ideMcpContent).toContain('`rider`');
+        expect(ideMcpContent).toContain('prefer `idea` first for Kotlin');
+        expect(ideMcpContent).toContain('prefer `webstorm` first for TypeScript');
         expect(ideMcpContent).toContain('falling back');
 
         // Check symlink
@@ -126,13 +131,13 @@ describe('coding-agents-toolings init', () => {
         expect(existsSync(join(tmpDir, '.mcp.json'))).toBe(false);
     });
 
-    it('generated ide-mcp hook scripts only emit additional context for code-oriented prompts', () => {
+    it('generated ide-mcp hook scripts route Kotlin/JVM prompts toward idea', () => {
         runCli(tmpDir, 'init --force');
 
         const codexHookScript = join(tmpDir, '.codex', 'hooks', 'ide-mcp-context.mjs');
         const codePrompt = JSON.stringify({
             hook_event_name: 'UserPromptSubmit',
-            prompt: 'Refactor the UserService class and find all references in src/services/user.ts',
+            prompt: 'Find the Kotlin service class in build.gradle.kts and rename the OrderService symbol',
         });
         const codeResult = spawnSync('node', [codexHookScript], {
             input: codePrompt, encoding: 'utf-8',
@@ -142,7 +147,41 @@ describe('coding-agents-toolings init', () => {
         const codeOutput = JSON.parse(codeResult.stdout);
         expect(codeOutput.hookSpecificOutput.hookEventName).toBe('UserPromptSubmit');
         expect(codeOutput.hookSpecificOutput.additionalContext).toContain('ide-mcp');
-        expect(codeOutput.hookSpecificOutput.additionalContext).toContain('webstorm');
+        expect(codeOutput.hookSpecificOutput.additionalContext).toContain('Prefer `idea` first');
+    });
+
+    it('generated ide-mcp hook scripts route Python prompts toward pycharm', () => {
+        runCli(tmpDir, 'init --force');
+
+        const codexHookScript = join(tmpDir, '.codex', 'hooks', 'ide-mcp-context.mjs');
+        const pythonPromptResult = spawnSync('node', [codexHookScript], {
+            input: JSON.stringify({
+                hook_event_name: 'UserPromptSubmit',
+                prompt: 'Trace the FastAPI endpoint in app/api/users.py and update the pytest coverage',
+            }),
+            encoding: 'utf-8',
+        });
+        expect(pythonPromptResult.status).toBe(0);
+        expect(pythonPromptResult.stdout.trim()).not.toBe('');
+        const pythonOutput = JSON.parse(pythonPromptResult.stdout);
+        expect(pythonOutput.hookSpecificOutput.additionalContext).toContain('Prefer `pycharm` first');
+    });
+
+    it('generated ide-mcp hook scripts route JS/TS prompts toward webstorm and stay silent for non-code prompts', () => {
+        runCli(tmpDir, 'init --force');
+
+        const codexHookScript = join(tmpDir, '.codex', 'hooks', 'ide-mcp-context.mjs');
+        const webPromptResult = spawnSync('node', [codexHookScript], {
+            input: JSON.stringify({
+                hook_event_name: 'UserPromptSubmit',
+                prompt: 'Refactor the React component in src/components/App.tsx and update the Next.js route',
+            }),
+            encoding: 'utf-8',
+        });
+        expect(webPromptResult.status).toBe(0);
+        expect(webPromptResult.stdout.trim()).not.toBe('');
+        const webOutput = JSON.parse(webPromptResult.stdout);
+        expect(webOutput.hookSpecificOutput.additionalContext).toContain('Prefer `webstorm` first');
 
         const nonCodeResult = spawnSync('node', [codexHookScript], {
             input: JSON.stringify({

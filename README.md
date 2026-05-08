@@ -72,7 +72,7 @@ Generates a standalone handoff summary for sharing with teammates in Slack, PRs,
 
 ### `ide-mcp`
 
-Helps coding sessions prefer connected JetBrains IDE MCP servers such as WebStorm or IntelliJ IDEA when the prompt is clearly about source code work.
+Helps coding sessions prefer connected JetBrains IDE MCP servers such as IntelliJ IDEA, WebStorm, PyCharm, GoLand, Rider, PhpStorm, RubyMine, RustRover, CLion, DataGrip, or DataSpell when the prompt is clearly about source code work.
 
 - Uses the shared repo-local skill as the portable behavior contract
 - Adds repo-local `UserPromptSubmit` hooks for both Codex and Claude by default
@@ -93,7 +93,7 @@ npx coding-agents-toolings init [options]
 
 ## How It Works
 
-Skills are installed to `.agents/skills/` with a compatibility symlink from `.claude/skills/` for Claude Code and related agent environments. The `ide-mcp` skill is the shared, portable behavior layer, and repo-local `UserPromptSubmit` hooks are installed for both Codex and Claude so code-oriented prompts automatically get a short nudge to prefer connected `idea` or `webstorm` MCP servers when available.
+Skills are installed to `.agents/skills/` with a compatibility symlink from `.claude/skills/` for Claude Code and related agent environments. The `ide-mcp` skill is the shared, portable behavior layer, and repo-local `UserPromptSubmit` hooks are installed for both Codex and Claude so code-oriented prompts automatically get a short nudge to prefer the best-matching connected JetBrains IDE MCP server when available.
 
 This package does not write user-global client config such as `~/.codex/config.toml` or `~/.claude.json`, and it does not try to generate JetBrains MCP connection details. It only installs repo-local skills and repo-local hook/config files.
 
