@@ -10,7 +10,7 @@ export interface InitOptions {
     force: boolean;
     dryRun: boolean;
     noSymlink: boolean;
-    noHook: boolean;
+    hook: boolean;
 }
 
 export async function init(opts: InitOptions): Promise<void> {
@@ -47,7 +47,7 @@ export async function init(opts: InitOptions): Promise<void> {
     // Step 3: Install repo-local Codex and Claude hooks
     let codexHooksChanged = false;
     let claudeHooksChanged = false;
-    if (!opts.noHook) {
+    if (opts.hook) {
         codexHooksChanged = installCodexHooks({
             root, dryRun: opts.dryRun,
         });
@@ -55,7 +55,7 @@ export async function init(opts: InitOptions): Promise<void> {
             root, dryRun: opts.dryRun,
         });
     } else {
-        log.dim('  Skipped repo-local hooks (--no-hook)');
+        log.dim('  Skipped repo-local hooks (opt-in; use --hook)');
     }
 
     // Step 4: Ensure agent-specs/ is gitignored
@@ -77,7 +77,7 @@ export async function init(opts: InitOptions): Promise<void> {
         if (!opts.noSymlink) {
             log.dim('  .claude/skills → ../.agents/skills');
         }
-        if (!opts.noHook) {
+        if (opts.hook) {
             log.dim('  .codex/config.toml');
             log.dim('  .codex/hooks/ide-mcp-context.mjs');
             log.dim('  .claude/settings.json');
@@ -85,6 +85,10 @@ export async function init(opts: InitOptions): Promise<void> {
         }
         console.log();
         log.info('Use /spec-create, /spec-update, /spec-complete, and /spec-handoff in your agent workflow.');
-        log.info('Code-oriented prompts in Codex and Claude will also be nudged toward the repo-local ide-mcp skill by default.');
+        if (opts.hook) {
+            log.info('Code-oriented prompts in Codex and Claude will also be nudged toward the repo-local ide-mcp skill.');
+        } else {
+            log.info('Use --hook if you also want repo-local Codex and Claude hook setup for ide-mcp.');
+        }
     }
 }

@@ -41,7 +41,7 @@ describe('coding-agents-toolings init', () => {
         rmSync(tmpDir, {recursive: true, force: true});
     });
 
-    it('creates skills, symlink, and repo-local Codex/Claude hook files in a fresh repo', () => {
+    it('creates skills and symlink in a fresh repo without hooks by default', () => {
         const result = runCli(tmpDir, 'init --force');
         expect(result.exitCode).toBe(0);
 
@@ -107,7 +107,17 @@ describe('coding-agents-toolings init', () => {
         const ideViaSymlink = readFileSync(join(symlinkPath, 'ide-mcp', 'SKILL.md'), 'utf-8');
         expect(ideViaSymlink).toContain('name: ide-mcp');
 
-        // Check Codex repo-local config and hook script
+        // Hooks are opt-in
+        expect(existsSync(join(tmpDir, '.codex'))).toBe(false);
+        expect(existsSync(join(tmpDir, '.claude', 'settings.json'))).toBe(false);
+        expect(existsSync(join(tmpDir, '.claude', 'hooks'))).toBe(false);
+        expect(existsSync(join(tmpDir, '.mcp.json'))).toBe(false);
+    });
+
+    it('creates repo-local Codex/Claude hook files when --hook is enabled', () => {
+        const result = runCli(tmpDir, 'init --force --hook');
+        expect(result.exitCode).toBe(0);
+
         const codexConfig = join(tmpDir, '.codex', 'config.toml');
         const codexHookScript = join(tmpDir, '.codex', 'hooks', 'ide-mcp-context.mjs');
         expect(existsSync(codexConfig)).toBe(true);
@@ -121,7 +131,6 @@ describe('coding-agents-toolings init', () => {
         expect(codexConfigContent).toContain('[[hooks.PostToolUse]]');
         expect(codexConfigContent).toContain('.codex/hooks/ide-mcp-context.mjs');
 
-        // Check Claude repo-local settings and hook script
         const claudeSettingsPath = join(tmpDir, '.claude', 'settings.json');
         const claudeHookScript = join(tmpDir, '.claude', 'hooks', 'ide-mcp-context.mjs');
         expect(existsSync(claudeSettingsPath)).toBe(true);
@@ -129,12 +138,10 @@ describe('coding-agents-toolings init', () => {
         const claudeSettings = readJson(claudeSettingsPath);
         expect(claudeSettings.hooks.UserPromptSubmit).toBeInstanceOf(Array);
         expect(JSON.stringify(claudeSettings.hooks.UserPromptSubmit)).toContain('.claude/hooks/ide-mcp-context.mjs');
-
-        expect(existsSync(join(tmpDir, '.mcp.json'))).toBe(false);
     });
 
     it('generated ide-mcp hook scripts route Kotlin/JVM prompts toward idea', () => {
-        runCli(tmpDir, 'init --force');
+        runCli(tmpDir, 'init --force --hook');
 
         const codexHookScript = join(tmpDir, '.codex', 'hooks', 'ide-mcp-context.mjs');
         const codePrompt = JSON.stringify({
@@ -156,7 +163,7 @@ describe('coding-agents-toolings init', () => {
     });
 
     it('generated ide-mcp hook scripts route Python prompts toward pycharm', () => {
-        runCli(tmpDir, 'init --force');
+        runCli(tmpDir, 'init --force --hook');
 
         const codexHookScript = join(tmpDir, '.codex', 'hooks', 'ide-mcp-context.mjs');
         const pythonPromptResult = spawnSync('node', [codexHookScript], {
@@ -176,7 +183,7 @@ describe('coding-agents-toolings init', () => {
     });
 
     it('generated ide-mcp hook scripts route JS/TS prompts toward webstorm and stay silent for non-code prompts', () => {
-        runCli(tmpDir, 'init --force');
+        runCli(tmpDir, 'init --force --hook');
 
         const codexHookScript = join(tmpDir, '.codex', 'hooks', 'ide-mcp-context.mjs');
         const webPromptResult = spawnSync('node', [codexHookScript], {
@@ -209,7 +216,7 @@ describe('coding-agents-toolings init', () => {
     });
 
     it('Codex guardrail blocks broad shell search until enough JetBrains MCP steps have happened', () => {
-        runCli(tmpDir, 'init --force');
+        runCli(tmpDir, 'init --force --hook');
 
         const codexHookScript = join(tmpDir, '.codex', 'hooks', 'ide-mcp-context.mjs');
         const context = {
@@ -302,8 +309,8 @@ describe('coding-agents-toolings init', () => {
     });
 
     it('is idempotent — re-running makes no duplicate hook registrations', () => {
-        runCli(tmpDir, 'init --force');
-        const result = runCli(tmpDir, 'init --force');
+        runCli(tmpDir, 'init --force --hook');
+        const result = runCli(tmpDir, 'init --force --hook');
         expect(result.exitCode).toBe(0);
         expect(result.stdout).toContain('unchanged');
         expect(result.stdout).toContain('already linked');
@@ -349,7 +356,7 @@ describe('coding-agents-toolings init', () => {
             },
         }, null, 2));
 
-        const result = runCli(tmpDir, 'init --force');
+        const result = runCli(tmpDir, 'init --force --hook');
         expect(result.exitCode).toBe(0);
 
         const codexConfig = readFileSync(join(tmpDir, '.codex', 'config.toml'), 'utf-8');
@@ -377,7 +384,7 @@ describe('coding-agents-toolings init', () => {
         expect(existsSync(join(tmpDir, '.claude', 'skills'))).toBe(false);
     });
 
-    it('--no-hook skips repo-local Codex and Claude hook creation', () => {
+    it('--hook remains opt-in and legacy --no-hook still skips hook creation', () => {
         const result = runCli(tmpDir, 'init --force --no-hook');
         expect(result.exitCode).toBe(0);
 
